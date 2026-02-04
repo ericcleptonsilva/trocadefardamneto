@@ -18,6 +18,7 @@ class ExchangeHistory(db.Model):
     student_id = db.Column(db.String(50), nullable=False)
     uniform_code = db.Column(db.String(50), nullable=False)
     uniform_size = db.Column(db.String(10), nullable=False)
+    reason = db.Column(db.String(100), nullable=True)
     timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -26,5 +27,6 @@ class ExchangeHistory(db.Model):
             "student_id": self.student_id,
             "uniform_code": self.uniform_code,
             "uniform_size": self.uniform_size,
+            "reason": self.reason,
             "timestamp": self.timestamp.isoformat()
         }

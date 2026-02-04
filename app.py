@@ -25,6 +25,7 @@ def register_exchange():
     student_id = data.get('student_id')
     uniform_code = data.get('uniform_code')
     uniform_size = data.get('uniform_size')
+    reason = data.get('reason')
 
     if not all([student_id, uniform_code, uniform_size]):
         return jsonify({"error": "Missing data"}), 400
@@ -32,7 +33,8 @@ def register_exchange():
     new_exchange = ExchangeHistory(
         student_id=student_id,
         uniform_code=uniform_code,
-        uniform_size=uniform_size
+        uniform_size=uniform_size,
+        reason=reason
     )
     db.session.add(new_exchange)
     db.session.commit()
@@ -87,18 +89,20 @@ def export_pdf():
     pdf.ln(10)
 
     pdf.set_font("helvetica", 'B', 12)
-    pdf.cell(40, 10, "Matricula", border=1)
-    pdf.cell(50, 10, "Codigo", border=1)
-    pdf.cell(30, 10, "Tamanho", border=1)
-    pdf.cell(70, 10, "Data/Hora", border=1)
+    pdf.cell(30, 10, "Matricula", border=1)
+    pdf.cell(40, 10, "Codigo", border=1)
+    pdf.cell(20, 10, "Tam.", border=1)
+    pdf.cell(50, 10, "Motivo", border=1)
+    pdf.cell(50, 10, "Data/Hora", border=1)
     pdf.ln()
 
     pdf.set_font("helvetica", '', 10)
     for record in history:
-        pdf.cell(40, 10, str(record.student_id), border=1)
-        pdf.cell(50, 10, str(record.uniform_code), border=1)
-        pdf.cell(30, 10, str(record.uniform_size), border=1)
-        pdf.cell(70, 10, record.timestamp.strftime("%Y-%m-%d %H:%M:%S"), border=1)
+        pdf.cell(30, 10, str(record.student_id), border=1)
+        pdf.cell(40, 10, str(record.uniform_code), border=1)
+        pdf.cell(20, 10, str(record.uniform_size), border=1)
+        pdf.cell(50, 10, str(record.reason or ""), border=1)
+        pdf.cell(50, 10, record.timestamp.strftime("%Y-%m-%d %H:%M:%S"), border=1)
         pdf.ln()
 
     pdf_out = pdf.output()
