@@ -1,0 +1,17 @@
+CREATE DATABASE IF NOT EXISTS uniforms_exchange;
+USE uniforms_exchange;
+
+CREATE TABLE IF NOT EXISTS uniforms (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    size VARCHAR(10) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS exchange_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    student_id VARCHAR(50) NOT NULL,
+    uniform_code VARCHAR(50) NOT NULL,
+    uniform_size VARCHAR(10) NOT NULL,
+    reason VARCHAR(100),
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
