@@ -11,6 +11,8 @@ function App() {
 
   const handleRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
+    // Automatically switch to history view to show the result
+    setActiveTab('history');
   };
 
   return (
