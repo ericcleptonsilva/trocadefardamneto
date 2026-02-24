@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, send_file
+from flask import Flask, request, jsonify, send_file
 from database import db
 from models import Uniform, ExchangeHistory
 import os
@@ -14,10 +14,6 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/register_exchange', methods=['POST'])
 def register_exchange():
