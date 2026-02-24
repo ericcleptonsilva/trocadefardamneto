@@ -74,8 +74,9 @@ function App() {
       setOutSize('')
       fetchHistory()
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Erro inesperado ao registrar a troca.'
-      alert(errorMsg)
+      console.error('Detailed Error:', err)
+      const errorMsg = err.response?.data?.error || err.message || 'Erro inesperado ao registrar a troca.'
+      alert(`Falha no Registro: ${errorMsg}`)
     }
   }
 
@@ -89,8 +90,8 @@ function App() {
       setFile(null)
       fetchUniforms()
     } catch (err) {
-      const errorMsg = err.response?.data?.error || 'Erro ao importar arquivo.'
-      alert(errorMsg)
+      const errorMsg = err.response?.data?.error || err.message || 'Erro ao importar arquivo.'
+      alert(`Falha na Importação: ${errorMsg}`)
     }
   }
 

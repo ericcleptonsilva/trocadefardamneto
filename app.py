@@ -6,11 +6,17 @@ import csv
 import io
 from fpdf import FPDF
 from sqlalchemy import inspect
+import logging
 
 app = Flask(__name__)
 
-# Ensure instance folder exists
-instance_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance')
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Ensure instance folder exists at root level
+basedir = os.path.abspath(os.path.dirname(__file__))
+instance_path = os.path.join(basedir, 'instance')
 if not os.path.exists(instance_path):
     os.makedirs(instance_path)
 
@@ -22,21 +28,27 @@ db.init_app(app)
 
 with app.app_context():
     inspector = inspect(db.engine)
-    if 'exchange_history' in inspector.get_table_names():
-        columns = [c['name'] for c in inspector.get_columns('exchange_history')]
-        if 'in_uniform_code' not in columns:
-            # Old schema detected, reset for development simplicity
-            db.drop_all()
+    try:
+        if 'exchange_history' in inspector.get_table_names():
+            columns = [c['name'] for c in inspector.get_columns('exchange_history')]
+            if 'in_uniform_code' not in columns:
+                logger.info("Old schema detected in exchange_history. Resetting database.")
+                db.drop_all()
+                db.create_all()
+        else:
+            logger.info("Tables not found. Creating all tables.")
             db.create_all()
-            print("Database schema updated (dropped and recreated).")
-    else:
+    except Exception as e:
+        logger.error(f"Error during database initialization: {e}")
         db.create_all()
-        print("Database created.")
 
 @app.route('/register_exchange', methods=['POST'])
 def register_exchange():
     try:
         data = request.json
+        if not data:
+            return jsonify({"error": "Nenhum dado recebido."}), 400
+
         student_id = data.get('student_id')
         in_code = data.get('in_uniform_code')
         in_size = data.get('in_uniform_size')
@@ -44,7 +56,7 @@ def register_exchange():
         out_size = data.get('out_uniform_size')
 
         if not all([student_id, in_code, in_size, out_code, out_size]):
-            return jsonify({"error": "Dados incompletos. Preencha todos os campos."}), 400
+            return jsonify({"error": "Todos os campos (Matrícula, Entrada e Saída) são obrigatórios."}), 400
 
         new_exchange = ExchangeHistory(
             student_id=student_id,
@@ -56,10 +68,12 @@ def register_exchange():
         db.session.add(new_exchange)
         db.session.commit()
 
+        logger.info(f"Exchange registered for student {student_id}")
         return jsonify({"message": "Troca registrada com sucesso!", "exchange": new_exchange.to_dict()}), 201
     except Exception as e:
-        print(f"Error registering exchange: {str(e)}")
-        return jsonify({"error": "Erro interno ao registrar a troca no banco de dados."}), 500
+        logger.error(f"Error in register_exchange: {e}")
+        db.session.rollback()
+        return jsonify({"error": f"Erro interno: {str(e)}"}), 500
 
 @app.route('/history', methods=['GET'])
 def get_history():
@@ -67,6 +81,7 @@ def get_history():
         history = ExchangeHistory.query.order_by(ExchangeHistory.timestamp.desc()).all()
         return jsonify([record.to_dict() for record in history])
     except Exception as e:
+        logger.error(f"Error in get_history: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/uniforms', methods=['GET'])
@@ -75,35 +90,38 @@ def get_uniforms():
         uniforms = Uniform.query.all()
         return jsonify([u.to_dict() for u in uniforms])
     except Exception as e:
+        logger.error(f"Error in get_uniforms: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/import_uniforms', methods=['POST'])
 def import_uniforms():
     if 'file' not in request.files:
-        return jsonify({"error": "Nenhum arquivo enviado."}), 400
+        return jsonify({"error": "Arquivo não encontrado na requisição."}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "Nenhum arquivo selecionado."}), 400
 
     try:
-        if file:
-            stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
-            csv_input = csv.DictReader(stream)
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        csv_input = csv.DictReader(stream)
 
-            imported_count = 0
-            for row in csv_input:
-                code = row.get('code')
-                size = row.get('size')
-                if code and size:
-                    existing = Uniform.query.filter_by(code=code, size=size).first()
-                    if not existing:
-                        new_uniform = Uniform(code=code, size=size)
-                        db.session.add(new_uniform)
-                        imported_count += 1
+        imported_count = 0
+        for row in csv_input:
+            code = row.get('code')
+            size = row.get('size')
+            if code and size:
+                existing = Uniform.query.filter_by(code=code, size=size).first()
+                if not existing:
+                    new_uniform = Uniform(code=code, size=size)
+                    db.session.add(new_uniform)
+                    imported_count += 1
 
-            db.session.commit()
-            return jsonify({"message": f"Sucesso! {imported_count} fardamentos importados."}), 201
+        db.session.commit()
+        logger.info(f"Imported {imported_count} uniforms.")
+        return jsonify({"message": f"Sucesso! {imported_count} fardamentos importados para o catálogo."}), 201
     except Exception as e:
+        logger.error(f"Error in import_uniforms: {e}")
+        db.session.rollback()
         return jsonify({"error": f"Erro ao processar CSV: {str(e)}"}), 500
 
 @app.route('/export_pdf', methods=['GET'])
@@ -137,6 +155,7 @@ def export_pdf():
 
         return send_file(output, as_attachment=True, download_name="historico_fardamento.pdf", mimetype='application/pdf')
     except Exception as e:
+        logger.error(f"Error in export_pdf: {e}")
         return str(e), 500
 
 if __name__ == '__main__':
