@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/register_exchange': 'http://127.0.0.1:5000',
-      '/history': 'http://127.0.0.1:5000',
-      '/uniforms': 'http://127.0.0.1:5000',
-      '/import_uniforms': 'http://127.0.0.1:5000',
-      '/export_pdf': 'http://127.0.0.1:5000',
+      '/register_exchange.php': 'http://127.0.0.1:8000',
+      '/history.php': 'http://127.0.0.1:8000',
+      '/uniforms.php': 'http://127.0.0.1:8000',
+      '/import_uniforms.php': 'http://127.0.0.1:8000',
+      '/export_pdf.php': 'http://127.0.0.1:8000',
     }
   }
 })

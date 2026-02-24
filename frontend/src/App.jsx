@@ -38,7 +38,7 @@ function App() {
   const fetchHistory = async () => {
     setLoading(true)
     try {
-      const res = await api.get('/history')
+      const res = await api.get('/history.php')
       setHistory(res.data)
     } catch (err) {
       console.error('Erro ao buscar histórico:', err)
@@ -49,7 +49,7 @@ function App() {
 
   const fetchUniforms = async () => {
     try {
-      const res = await api.get('/uniforms')
+      const res = await api.get('/uniforms.php')
       setUniforms(res.data)
     } catch (err) {
       console.error('Erro ao buscar catálogo:', err)
@@ -59,7 +59,7 @@ function App() {
   const handleRegister = async (e) => {
     e.preventDefault()
     try {
-      const res = await api.post('/register_exchange', {
+      const res = await api.post('/register_exchange.php', {
         student_id: studentId,
         in_uniform_code: inCode,
         in_uniform_size: inSize,
@@ -74,7 +74,11 @@ function App() {
       setOutSize('')
       fetchHistory()
     } catch (err) {
-      console.error('Detailed Error:', err)
+      console.error('Error Details:', err)
+      if (err.response) {
+        console.error('Response Data:', err.response.data)
+        console.error('Response Status:', err.response.status)
+      }
       const errorMsg = err.response?.data?.error || err.message || 'Erro inesperado ao registrar a troca.'
       alert(`Falha no Registro: ${errorMsg}`)
     }
@@ -85,18 +89,19 @@ function App() {
     const formData = new FormData()
     formData.append('file', file)
     try {
-      const res = await api.post('/import_uniforms', formData)
+      const res = await api.post('/import_uniforms.php', formData)
       alert(res.data.message)
       setFile(null)
       fetchUniforms()
     } catch (err) {
+      console.error('Import Error:', err)
       const errorMsg = err.response?.data?.error || err.message || 'Erro ao importar arquivo.'
       alert(`Falha na Importação: ${errorMsg}`)
     }
   }
 
   const handleExportPDF = () => {
-    window.location.href = '/export_pdf'
+    window.location.href = '/export_pdf.php'
   }
 
   const uniqueCodes = [...new Set(uniforms.map(u => u.code))]

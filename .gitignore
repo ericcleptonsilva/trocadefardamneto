@@ -4,3 +4,11 @@ __pycache__/
 *.csv
 verification/
 test_system.py
+check_pdf.py
+vendor/
+node_modules/
+dist/
+instance/
+.pytest_cache/
+.coverage
+htmlcov/

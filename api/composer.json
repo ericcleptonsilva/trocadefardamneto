@@ -1,0 +1,13 @@
+{
+    "name": "fardamento/api",
+    "description": "API para troca de fardamento",
+    "authors": [
+        {
+            "name": "Jules",
+            "email": "jules@example.com"
+        }
+    ],
+    "require": {
+        "fpdf/fpdf": "^1.86"
+    }
+}
