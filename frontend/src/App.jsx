@@ -8,7 +8,10 @@ import {
   ArrowRightLeft,
   User,
   Package,
-  Maximize2
+  Maximize2,
+  LogIn,
+  LogOut,
+  History
 } from 'lucide-react'
 import './App.css'
 
@@ -38,7 +41,7 @@ function App() {
       const res = await api.get('/history')
       setHistory(res.data)
     } catch (err) {
-      console.error('Error fetching history:', err)
+      console.error('Erro ao buscar histórico:', err)
     } finally {
       setLoading(false)
     }
@@ -49,21 +52,21 @@ function App() {
       const res = await api.get('/uniforms')
       setUniforms(res.data)
     } catch (err) {
-      console.error('Error fetching uniforms:', err)
+      console.error('Erro ao buscar catálogo:', err)
     }
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
     try {
-      await api.post('/register_exchange', {
+      const res = await api.post('/register_exchange', {
         student_id: studentId,
         in_uniform_code: inCode,
         in_uniform_size: inSize,
         out_uniform_code: outCode,
         out_uniform_size: outSize
       })
-      alert('Troca registrada com sucesso!')
+      alert(res.data.message)
       setStudentId('')
       setInCode('')
       setInSize('')
@@ -71,12 +74,13 @@ function App() {
       setOutSize('')
       fetchHistory()
     } catch (err) {
-      alert('Erro ao registrar troca.')
+      const errorMsg = err.response?.data?.error || 'Erro inesperado ao registrar a troca.'
+      alert(errorMsg)
     }
   }
 
   const handleImport = async () => {
-    if (!file) return alert('Selecione um arquivo primeiro.')
+    if (!file) return alert('Por favor, selecione um arquivo CSV primeiro.')
     const formData = new FormData()
     formData.append('file', file)
     try {
@@ -85,7 +89,8 @@ function App() {
       setFile(null)
       fetchUniforms()
     } catch (err) {
-      alert('Erro ao importar fardamentos.')
+      const errorMsg = err.response?.data?.error || 'Erro ao importar arquivo.'
+      alert(errorMsg)
     }
   }
 
@@ -97,34 +102,36 @@ function App() {
   const uniqueSizes = [...new Set(uniforms.map(u => u.size))]
 
   return (
-    <div className="container">
+    <div className="app-container">
       <header>
-        <h1><ArrowRightLeft size={32} color="#2563eb" /> Registro de Troca de Fardamento</h1>
-        <p style={{ color: '#64748b', marginLeft: '40px' }}>Sistema de gerenciamento de fardamento escolar</p>
+        <h1><ArrowRightLeft size={40} color="#3b82f6" /> TrocaFarda</h1>
+        <p>Sistema Inteligente de Gestão de Fardamento</p>
       </header>
 
       <div className="card">
-        <h2 className="card-title"><ClipboardList size={20} /> Nova Troca</h2>
+        <h2 className="card-title"><ClipboardList size={24} color="#3b82f6" /> Nova Solicitação de Troca</h2>
         <form onSubmit={handleRegister}>
-          <div className="form-group" style={{ maxWidth: '400px' }}>
-            <label><User size={14} style={{ marginRight: '5px' }} /> Matrícula do Aluno</label>
+          <div className="form-group" style={{ maxWidth: '300px' }}>
+            <label><User size={16} /> Matrícula do Aluno</label>
             <input
+              className="input-styled"
               type="text"
-              placeholder="Digite a matrícula..."
+              placeholder="Ex: 2024001"
               value={studentId}
               onChange={e => setStudentId(e.target.value)}
               required
             />
           </div>
 
-          <div className="form-grid">
-            <div className="form-section">
-              <h3>Entrou (Devolução)</h3>
+          <div className="form-grid" style={{ marginTop: '1.5rem' }}>
+            <div className="section-box">
+              <h3><LogOut size={16} color="#f59e0b" /> Devolução (Entrada)</h3>
               <div className="form-group">
-                <label><Package size={14} style={{ marginRight: '5px' }} /> Código</label>
+                <label>Código do Fardamento</label>
                 <input
+                  className="input-styled"
                   type="text"
-                  placeholder="Ex: POLO-01"
+                  placeholder="Selecione ou digite..."
                   list="uniformCodes"
                   value={inCode}
                   onChange={e => setInCode(e.target.value)}
@@ -132,8 +139,9 @@ function App() {
                 />
               </div>
               <div className="form-group">
-                <label><Maximize2 size={14} style={{ marginRight: '5px' }} /> Tamanho</label>
+                <label>Tamanho</label>
                 <input
+                  className="input-styled"
                   type="text"
                   placeholder="Ex: M"
                   list="uniformSizes"
@@ -144,13 +152,14 @@ function App() {
               </div>
             </div>
 
-            <div className="form-section">
-              <h3>Saiu (Entrega)</h3>
+            <div className="section-box">
+              <h3><LogIn size={16} color="#10b981" /> Entrega (Saída)</h3>
               <div className="form-group">
-                <label><Package size={14} style={{ marginRight: '5px' }} /> Código</label>
+                <label>Código do Fardamento</label>
                 <input
+                  className="input-styled"
                   type="text"
-                  placeholder="Ex: POLO-02"
+                  placeholder="Selecione ou digite..."
                   list="uniformCodes"
                   value={outCode}
                   onChange={e => setOutCode(e.target.value)}
@@ -158,8 +167,9 @@ function App() {
                 />
               </div>
               <div className="form-group">
-                <label><Maximize2 size={14} style={{ marginRight: '5px' }} /> Tamanho</label>
+                <label>Tamanho</label>
                 <input
+                  className="input-styled"
                   type="text"
                   placeholder="Ex: G"
                   list="uniformSizes"
@@ -178,96 +188,91 @@ function App() {
             {uniqueSizes.map(size => <option key={size} value={size} />)}
           </datalist>
 
-          <button type="submit" className="btn-primary" style={{ marginTop: '2rem', width: '200px' }}>
-            Registrar Troca
+          <button type="submit" className="btn btn-primary" style={{ marginTop: '2rem', height: '48px', width: '220px' }}>
+            Finalizar Registro
           </button>
         </form>
       </div>
 
       <div className="form-grid">
         <div className="card">
-          <h2 className="card-title"><Upload size={20} /> Importar Catálogo</h2>
+          <h2 className="card-title"><Upload size={20} /> Atualizar Catálogo</h2>
           <div className="form-group">
-            <label>Selecione o arquivo CSV (code,size)</label>
+            <label>Upload de arquivo CSV (colunas: code, size)</label>
             <input
+              className="input-styled"
               type="file"
               accept=".csv"
               onChange={e => setFile(e.target.files[0])}
-              style={{ padding: '0.4rem' }}
+              style={{ padding: '0.5rem' }}
             />
           </div>
-          <button onClick={handleImport} className="btn-outline" style={{ width: '100%' }}>
-            <Upload size={18} /> Importar agora
+          <button onClick={handleImport} className="btn btn-outline" style={{ width: '100%' }}>
+            <Upload size={18} /> Importar CSV
           </button>
         </div>
 
         <div className="card">
-          <h2 className="card-title"><Download size={20} /> Exportar Relatórios</h2>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-            Gere um arquivo PDF com todo o histórico de trocas registradas no sistema.
+          <h2 className="card-title"><Download size={20} /> Relatórios PDF</h2>
+          <p style={{ color: '#4b5563', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            Gere um documento PDF consolidado com todo o histórico de transações.
           </p>
-          <button onClick={handleExportPDF} className="btn-success" style={{ width: '100%' }}>
-            <Download size={18} /> Baixar Histórico (PDF)
+          <button onClick={handleExportPDF} className="btn btn-success" style={{ width: '100%' }}>
+            <Download size={18} /> Baixar Relatório Completo
           </button>
         </div>
       </div>
 
       <div className="card">
-        <div className="actions-bar">
-          <h2 className="card-title" style={{ marginBottom: 0 }}><RefreshCw size={20} /> Histórico de Trocas</h2>
-          <button onClick={fetchHistory} className="btn-outline" disabled={loading}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+          <h2 className="card-title" style={{ margin: 0 }}><History size={24} color="#3b82f6" /> Histórico Recente</h2>
+          <button onClick={fetchHistory} className="btn btn-outline" disabled={loading}>
             <RefreshCw size={18} className={loading ? 'spin' : ''} />
-            {loading ? 'Carregando...' : 'Atualizar Lista'}
+            {loading ? 'Sincronizando...' : 'Sincronizar'}
           </button>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>Matrícula</th>
-              <th>Entrou (C/T)</th>
-              <th>Saiu (C/T)</th>
-              <th>Data e Hora</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.length === 0 ? (
+        <div className="table-container">
+          <table>
+            <thead>
               <tr>
-                <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                  Nenhum registro encontrado.
-                </td>
+                <th>Estudante</th>
+                <th>Devolvido (Entrada)</th>
+                <th>Entregue (Saída)</th>
+                <th>Data da Troca</th>
               </tr>
-            ) : (
-              history.map(item => (
-                <tr key={item.id}>
-                  <td style={{ fontWeight: '600' }}>{item.student_id}</td>
-                  <td>
-                    <span className="badge badge-in">{item.in_uniform_code}</span>
-                    <span style={{ margin: '0 5px', color: '#cbd5e1' }}>/</span>
-                    <span style={{ fontWeight: '500' }}>{item.in_uniform_size}</span>
-                  </td>
-                  <td>
-                    <span className="badge badge-out">{item.out_uniform_code}</span>
-                    <span style={{ margin: '0 5px', color: '#cbd5e1' }}>/</span>
-                    <span style={{ fontWeight: '500' }}>{item.out_uniform_size}</span>
-                  </td>
-                  <td style={{ color: '#64748b' }}>
-                    {new Date(item.timestamp).toLocaleString('pt-BR')}
+            </thead>
+            <tbody>
+              {history.length === 0 ? (
+                <tr>
+                  <td colSpan="4" style={{ textAlign: 'center', padding: '4rem', color: '#9ca3af' }}>
+                    Nenhuma troca registrada ainda.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                history.map(item => (
+                  <tr key={item.id}>
+                    <td style={{ fontWeight: '700', color: '#111827' }}>{item.student_id}</td>
+                    <td>
+                      <span className="badge badge-in">{item.in_uniform_code}</span>
+                      <span style={{ margin: '0 0.5rem', color: '#d1d5db' }}>|</span>
+                      <span style={{ fontWeight: '600' }}>{item.in_uniform_size}</span>
+                    </td>
+                    <td>
+                      <span className="badge badge-out">{item.out_uniform_code}</span>
+                      <span style={{ margin: '0 0.5rem', color: '#d1d5db' }}>|</span>
+                      <span style={{ fontWeight: '600' }}>{item.out_uniform_size}</span>
+                    </td>
+                    <td style={{ color: '#6b7280', fontSize: '0.8125rem' }}>
+                      {new Date(item.timestamp).toLocaleString('pt-BR')}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-
-      <style>{`
-        .spin { animation: rotate 1s linear infinite; }
-        @keyframes rotate {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   )
 }

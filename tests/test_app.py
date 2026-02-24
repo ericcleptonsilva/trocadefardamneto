@@ -41,10 +41,6 @@ class SystemTestCase(unittest.TestCase):
 
     def test_get_history(self):
         with app.app_context():
-            # Clear any existing data just in case
-            ExchangeHistory.query.delete()
-            db.session.commit()
-
             h1 = ExchangeHistory(
                 student_id="S1",
                 in_uniform_code="C1", in_uniform_size="S",
